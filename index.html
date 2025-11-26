@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dostihy na stole</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="title-block">
+      <p class="eyebrow" data-i18n="subtitle">Stolná verzia Dostihov so spritmi priamo v prehliadači.</p>
+      <h1 data-i18n="title">Dostihy na stole</h1>
+    </div>
+    <div class="controls">
+      <label class="field">
+        <span data-i18n="languageLabel">Jazyk</span>
+        <select id="languageSelector">
+          <option value="sk">Slovenčina</option>
+          <option value="cs">Čeština</option>
+          <option value="en">English</option>
+        </select>
+      </label>
+      <label class="field">
+        <span data-i18n="playersLabel">Jazdci</span>
+        <input type="number" id="playersCount" min="2" max="4" value="3">
+      </label>
+      <div class="buttons">
+        <button id="startButton" class="primary" data-i18n="startButton">Začať hru</button>
+        <button id="rollButton" class="secondary" data-i18n="rollButton" disabled>Hodiť kockou</button>
+      </div>
+      <div class="laps" id="lapsInfo"></div>
+      <div class="turn" id="turnInfo"></div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel board-panel">
+      <div class="panel-header">
+        <h2 data-i18n="boardHeading">Dostihová dráha</h2>
+        <p class="hint" data-i18n="boardHint">Kliknutím na políčka zobrazíte názvy úsekov.</p>
+      </div>
+      <div id="board" class="board-grid" aria-live="polite"></div>
+    </section>
+
+    <section class="side">
+      <div class="panel">
+        <div class="panel-header">
+          <h2 data-i18n="scoreboardHeading">Stajne</h2>
+          <p class="hint" data-i18n="scoreboardHint">Čipy zobrazujú polohu jazdcov a počet kôl.</p>
+        </div>
+        <ul id="playerList" class="player-list"></ul>
+      </div>
+      <div class="panel log-panel">
+        <div class="panel-header">
+          <h2 data-i18n="logHeading">Denník pretekov</h2>
+          <p class="hint" data-i18n="logHint">Každý hod kockou je zaznamenaný.</p>
+        </div>
+        <ol id="logList" class="log" aria-live="polite"></ol>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p data-i18n="footerNote">Otvor index.html v prehliadači, vyber jazdcov a stlač "Začať hru". Víťazom sa stáva ten, kto ako prvý dokončí všetky kolá.</p>
+  </footer>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
