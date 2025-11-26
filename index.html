@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emoji klávesnica na písmenká</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --glass: rgba(255, 255, 255, 0.78);
+      --border: rgba(255, 255, 255, 0.6);
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+      --accent: #6a7bff;
+      --accent-2: #ff8fb1;
+      --bg: radial-gradient(circle at 20% 20%, rgba(255, 209, 194, 0.25), transparent 25%),
+              radial-gradient(circle at 80% 0%, rgba(146, 204, 255, 0.25), transparent 30%),
+              linear-gradient(135deg, #f7f8ff, #fefefe);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: #0f172a;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    }
+
+    .app {
+      width: min(1100px, 95vw);
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .glass-card {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px) saturate(150%);
+      -webkit-backdrop-filter: blur(12px) saturate(150%);
+      padding: 20px 22px;
+    }
+
+    header {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .title {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 3vw, 40px);
+      font-family: 'Fredoka', 'Space Grotesk', sans-serif;
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    h1 span.badge {
+      background: linear-gradient(120deg, #ffd166, #ff8fb1);
+      color: #0f172a;
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      box-shadow: 0 8px 24px rgba(255, 166, 0, 0.25);
+    }
+
+    p.subtitle {
+      margin: 0;
+      color: #52616b;
+      font-size: 15px;
+      max-width: 640px;
+    }
+
+    .monitor {
+      display: grid;
+      grid-template-rows: 1fr auto;
+      height: 340px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .monitor::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.12));
+      pointer-events: none;
+    }
+
+    .screen {
+      border-radius: 18px;
+      padding: 18px;
+      background: rgba(15, 23, 42, 0.6);
+      color: #e2e8f0;
+      font-size: 18px;
+      line-height: 1.5;
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      gap: 8px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+    }
+
+    .typed-chip {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 6px 10px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      animation: pop 280ms ease;
+    }
+
+    @keyframes pop {
+      0% { transform: translateY(8px) scale(0.8); opacity: 0; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    .big-letter {
+      font-size: 72px;
+      font-weight: 600;
+      line-height: 1;
+      text-align: center;
+      color: #0f172a;
+      background: linear-gradient(180deg, #ffffff, #f1f5ff);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.7), var(--shadow);
+      border-radius: 20px;
+      padding: 18px 12px;
+    }
+
+    .challenge {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .challenge-info {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .challenge-label {
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      color: #64748b;
+    }
+
+    .challenge-target {
+      font-size: 22px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.7);
+      padding: 8px 12px;
+      border-radius: 999px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .keyboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .key {
+      position: relative;
+      border: 1px solid rgba(255,255,255,0.6);
+      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(245, 247, 255, 0.9));
+      padding: 12px 10px;
+      border-radius: 16px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+      transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-weight: 600;
+      color: #0f172a;
+      user-select: none;
+    }
+
+    .key span.emoji { font-size: 20px; }
+    .key span.letter { font-size: 18px; }
+
+    .key.active {
+      transform: translateY(2px) scale(0.98);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+      border-color: var(--accent);
+    }
+
+    .key::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      opacity: 0;
+      transform: scale(0.9);
+      transition: 180ms ease;
+    }
+
+    .key.active::after {
+      opacity: 1;
+      transform: scale(1);
+      box-shadow: 0 0 0 4px rgba(106, 123, 255, 0.25);
+    }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px;
+    }
+
+    .score-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+    }
+
+    .score-card strong { font-size: 18px; }
+    .score-card span { color: #52616b; font-size: 14px; }
+
+    .btn {
+      border: none;
+      background: linear-gradient(120deg, #6a7bff, #8e9bff);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(106, 123, 255, 0.28);
+      transition: transform 120ms ease, box-shadow 120ms ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(2px); box-shadow: 0 8px 18px rgba(106, 123, 255, 0.24); }
+
+    .tip-list { display: grid; gap: 8px; padding-left: 18px; margin: 10px 0 0; color: #475569; }
+
+    .pulse {
+      animation: pulse 1.2s ease;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(106, 123, 255, 0.35); }
+      100% { box-shadow: 0 0 0 20px rgba(106, 123, 255, 0); }
+    }
+
+    .bubble {
+      position: fixed;
+      font-size: 26px;
+      pointer-events: none;
+      animation: float 1s ease-out forwards;
+      filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15));
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0) scale(0.6); opacity: 1; }
+      100% { transform: translateY(-60px) scale(1.05); opacity: 0; }
+    }
+
+    @keyframes fade {
+      0% { opacity: 0.9; }
+      100% { opacity: 0; }
+    }
+
+    .layout-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .microcopy { color: #52616b; font-size: 14px; margin-top: 8px; }
+
+    footer {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: #52616b;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 960px) {
+      .app { grid-template-columns: 1fr; }
+      .monitor { height: auto; }
+      .challenge { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title">
+        <h1>Emoji písmenká <span class="badge">GLASS EDITION</span></h1>
+        <p class="subtitle">Vzdelávacia klávesnicová hra s písmenkami aj emodži. Stláčaj skutočné klávesy alebo virtuálne, zbieraj body, odhaľuj zvuky a nechaj obrazovku žiariť.</p>
+      </div>
+      <button class="btn" id="shuffle">🎲 Nová výzva</button>
+    </header>
+
+    <section class="glass-card monitor">
+      <div class="screen" id="screen" aria-live="polite" aria-label="Zoznam napísaných písmen"></div>
+      <div class="microcopy">Tip: Stlač kláves na klávesnici alebo klikni na bublinu. Každé písmenko má veselú emóciu.</div>
+    </section>
+
+    <section class="glass-card layout-grid">
+      <div class="challenge">
+        <div class="big-letter" id="targetLetter" aria-live="polite">A</div>
+        <div class="challenge-info">
+          <div class="challenge-label">Dnešná výzva</div>
+          <div class="challenge-target" id="challengeText">Zisti, čo sa stane, keď stlačíš písmenko A!</div>
+          <div class="score-grid">
+            <div class="glass-card score-card">
+              <div class="pill">🌟</div>
+              <div>
+                <strong id="score">0</strong>
+                <span>Body za presné zásahy</span>
+              </div>
+            </div>
+            <div class="glass-card score-card">
+              <div class="pill">🎶</div>
+              <div>
+                <strong id="melody">0</strong>
+                <span>Krát si rozospieval/a klávesy</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="challenge-label">Virtuálna klávesnica (klik alebo stlač)</div>
+        <div class="keyboard" id="keyboard"></div>
+      </div>
+    </section>
+
+    <section class="glass-card layout-grid">
+      <div class="challenge-label">Nápady na vylepšenie</div>
+      <ul class="tip-list">
+        <li>🪩 Karaoke mód: nechaj písmenká blikať do rytmu obľúbených melódií.</li>
+        <li>🎨 Režim farieb: za každý správny úder si môžeš zvoliť novú farbu pozadia.</li>
+        <li>🏆 Denné misie: zbieraj série bez chyby a odomkni špeciálne emodži.</li>
+        <li>🎯 Dopĺňanie slov: zobraz sa prázdne políčko a doplň písmenko, ktoré chýba.</li>
+        <li>🤹‍♀️ Miešanie rúk: skúšaj písať ľavou a pravou – hra ti ukáže, ako na to.</li>
+      </ul>
+    </section>
+
+    <footer>Vyrobené pre deti aj dospelých – zadarmo, s láskou a ľahkým humorom.</footer>
+  </div>
+
+  <script>
+    const letterSet = [
+      { letter: 'A', emoji: '🍎', hint: 'Ako jabĺčko – červené a šťavnaté.' },
+      { letter: 'B', emoji: '🐝', hint: 'Bzz! Písmeno B ako včielka bzučí.' },
+      { letter: 'C', emoji: '🌙', hint: 'C ako mesiac, ktorý sa usmieva.' },
+      { letter: 'D', emoji: '🐬', hint: 'D ako delfín, čo sa hrá vo vlnách.' },
+      { letter: 'E', emoji: '🦅', hint: 'E ako orol, ktorý letí vysoko.' },
+      { letter: 'F', emoji: '🍟', hint: 'F ako frietka, chrumkavá a veselá.' },
+      { letter: 'G', emoji: '🧤', hint: 'G ako rukavica, ktorá ťa zahreje.' },
+      { letter: 'H', emoji: '🏠', hint: 'H ako domček, kde je teplo.' },
+      { letter: 'I', emoji: '🍦', hint: 'I ako zmrzlina, čo sa topí.' },
+      { letter: 'J', emoji: '🧃', hint: 'J ako džús, čo má veselú slamku.' },
+      { letter: 'K', emoji: '🔑', hint: 'K ako kľúčik, ktorý otvára fantáziu.' },
+      { letter: 'L', emoji: '🦁', hint: 'L ako lev, kráľ smiechu.' },
+      { letter: 'M', emoji: '🍯', hint: 'M ako medík pre Macka Uška.' },
+      { letter: 'N', emoji: '🌈', hint: 'N ako nekonečná dúha.' },
+      { letter: 'O', emoji: '🦉', hint: 'O ako sova, múdra ako ty.' },
+      { letter: 'P', emoji: '🪁', hint: 'P ako papierový šarkan.' },
+      { letter: 'Q', emoji: '🎲', hint: 'Q ako kocka s tajomným písmenom.' },
+      { letter: 'R', emoji: '🤖', hint: 'R ako robot, čo tancuje.' },
+      { letter: 'S', emoji: '⭐', hint: 'S ako hviezda, čo žiari.' },
+      { letter: 'T', emoji: '🌮', hint: 'T ako taco – mňam!' },
+      { letter: 'U', emoji: '☂️', hint: 'U ako dáždnik, čo rád spieva v daždi.' },
+      { letter: 'V', emoji: '🎻', hint: 'V ako husle, nech znie melódia.' },
+      { letter: 'W', emoji: '🌊', hint: 'W ako vlnka, ktorá šuští.' },
+      { letter: 'X', emoji: '❌', hint: 'X ako krížik na poklade.' },
+      { letter: 'Y', emoji: '🧶', hint: 'Y ako klbko, čo sa gúľa.' },
+      { letter: 'Z', emoji: '🦓', hint: 'Z ako zebra s pruhmi.' }
+    ];
+
+    const keyboard = document.getElementById('keyboard');
+    const screen = document.getElementById('screen');
+    const shuffle = document.getElementById('shuffle');
+    const targetLetter = document.getElementById('targetLetter');
+    const challengeText = document.getElementById('challengeText');
+    const scoreEl = document.getElementById('score');
+    const melodyEl = document.getElementById('melody');
+
+    let score = 0;
+    let melody = 0;
+    let currentTarget = letterSet[0];
+    let audioCtx;
+
+    function createKeys() {
+      letterSet.forEach((item) => {
+        const btn = document.createElement('button');
+        btn.className = 'key';
+        btn.dataset.letter = item.letter;
+        btn.innerHTML = `<span class="emoji">${item.emoji}</span><span class="letter">${item.letter}</span>`;
+        btn.addEventListener('click', () => handleInput(item.letter));
+        keyboard.appendChild(btn);
+      });
+    }
+
+    function setTarget(letterObj) {
+      currentTarget = letterObj;
+      targetLetter.textContent = letterObj.letter;
+      challengeText.textContent = letterObj.hint;
+      targetLetter.classList.add('pulse');
+      setTimeout(() => targetLetter.classList.remove('pulse'), 400);
+    }
+
+    function getKeyButton(letter) {
+      return keyboard.querySelector(`[data-letter="${letter}"]`);
+    }
+
+    function playTone(success) {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const duration = 0.2;
+      const oscillator = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      oscillator.type = success ? 'triangle' : 'sawtooth';
+      oscillator.frequency.setValueAtTime(success ? 680 : 340, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+      oscillator.connect(gain).connect(audioCtx.destination);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + duration);
+    }
+
+    function addBubble(letter, emoji, fromEl) {
+      const rect = fromEl.getBoundingClientRect();
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.textContent = `${emoji} ${letter}`;
+      const x = rect.left + rect.width / 2 + (Math.random() * 30 - 15);
+      const y = rect.top + rect.height / 2;
+      bubble.style.left = `${x}px`;
+      bubble.style.top = `${y}px`;
+      document.body.appendChild(bubble);
+      bubble.addEventListener('animationend', () => bubble.remove());
+    }
+
+    function handleInput(letter) {
+      const normalized = letter.toUpperCase();
+      const match = letterSet.find((k) => k.letter === normalized);
+      if (!match) return;
+
+      const keyButton = getKeyButton(normalized);
+      keyButton.classList.add('active');
+      setTimeout(() => keyButton.classList.remove('active'), 120);
+
+      const chip = document.createElement('div');
+      chip.className = 'typed-chip';
+      chip.innerHTML = `<span>${match.emoji}</span><strong>${match.letter}</strong>`;
+      screen.prepend(chip);
+      if (screen.children.length > 18) {
+        screen.removeChild(screen.lastElementChild);
+      }
+
+      const isCorrect = match.letter === currentTarget.letter;
+      playTone(isCorrect);
+      addBubble(match.letter, match.emoji, keyButton);
+
+      if (isCorrect) {
+        score += 10;
+        scoreEl.textContent = score;
+        melody += 1;
+        melodyEl.textContent = melody;
+        randomSparkle();
+        setTimeout(() => shuffleTarget(), 200);
+      }
+    }
+
+    function shuffleTarget() {
+      const pick = letterSet[Math.floor(Math.random() * letterSet.length)];
+      setTarget(pick);
+    }
+
+    function randomSparkle() {
+      const colors = ['#6a7bff', '#ff8fb1', '#ffd166', '#76e4f7'];
+      const spark = document.createElement('div');
+      spark.style.position = 'absolute';
+      spark.style.inset = '0';
+      spark.style.pointerEvents = 'none';
+      spark.style.maskImage = 'radial-gradient(circle, #000 45%, transparent 60%)';
+      spark.style.background = `radial-gradient(circle at ${Math.random()*100}% ${Math.random()*100}%, ${colors[Math.floor(Math.random()*colors.length)]}, transparent 40%)`;
+      spark.style.opacity = '0.8';
+      spark.style.animation = 'fade 600ms ease-out';
+      spark.style.borderRadius = '20px';
+      spark.style.zIndex = '0';
+      const host = document.querySelector('.monitor');
+      host.appendChild(spark);
+      spark.addEventListener('animationend', () => spark.remove());
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (event.repeat) return;
+      const letter = event.key.toUpperCase();
+      handleInput(letter);
+    });
+
+    shuffle.addEventListener('click', shuffleTarget);
+
+    createKeys();
+    setTarget(currentTarget);
+  </script>
+</body>
+</html>
