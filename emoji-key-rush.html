@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emoji Key Rush</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --panel: #111827;
+      --accent: #14b8a6;
+      --muted: #9ca3af;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --fever: #f97316;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at 20% 20%, rgba(20,184,166,0.08), transparent 25%),
+                  radial-gradient(circle at 80% 0%, rgba(249,115,22,0.1), transparent 20%),
+                  var(--bg);
+      color: #e5e7eb;
+      min-height: 100vh;
+    }
+    header {
+      background: #0b1220;
+      padding: 20px 16px;
+      border-bottom: 1px solid #1f2937;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: 0.5px; }
+    .subtitle { color: var(--muted); margin: 0; font-size: 14px; }
+    main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 80px; }
+    .top-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 12px; }
+    .btn, .difficulty-btn, .mode-btn {
+      border: 1px solid #1f2937;
+      background: #111827;
+      color: #e5e7eb;
+      border-radius: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-weight: 600;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+    }
+    .btn:hover, .difficulty-btn:hover, .mode-btn:hover { border-color: var(--accent); color: #fff; }
+    .difficulty-btn.active, .mode-btn.active { background: var(--accent); border-color: var(--accent); color: #0b1220; box-shadow: 0 8px 20px rgba(20,184,166,0.45); }
+    .mode-switch, .difficulty-switch { display: flex; gap: 8px; flex-wrap: wrap; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid #1f2937;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      margin-top: 16px;
+    }
+    .game-area { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; align-items: stretch; }
+    .emoji-display { text-align: center; padding: 20px; border-radius: 12px; background: #0f172a; border: 1px solid #1f2937; }
+    .emoji { font-size: 96px; margin: 8px 0; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.35)); }
+    .key-target { font-size: 20px; color: var(--muted); margin-top: 4px; min-height: 28px; }
+    .log { min-height: 24px; color: var(--warning); margin-top: 6px; font-weight: 600; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap: 12px; }
+    .stat-box { background: #0b1220; padding: 12px; border-radius: 10px; border: 1px solid #1f2937; text-align: center; }
+    .stat-label { color: var(--muted); font-size: 13px; margin-bottom: 4px; }
+    .stat-value { font-size: 24px; font-weight: 700; }
+    .progress-container { height: 12px; background: #0b1220; border-radius: 8px; overflow: hidden; border: 1px solid #1f2937; }
+    .progress { height: 100%; background: linear-gradient(90deg, var(--accent), #22d3ee); width: 100%; transition: width 0.5s ease; }
+    .fever { background: linear-gradient(90deg, #f97316, #ef4444) !important; box-shadow: 0 0 12px rgba(249,115,22,0.6); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; border-bottom: 1px solid #1f2937; text-align: left; font-size: 14px; }
+    th { color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .achievements { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 10px; }
+    .achievement { background: #0b1220; padding: 12px; border-radius: 10px; border: 1px dashed #1f2937; }
+    .achievement.unlocked { border-style: solid; border-color: var(--accent); box-shadow: 0 10px 24px rgba(20,184,166,0.25); }
+    .achievement h4 { margin: 0 0 6px; font-size: 15px; }
+    .small { color: var(--muted); font-size: 13px; }
+    .timer { font-size: 22px; font-weight: 700; color: #fff; }
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    select { background: #0b1220; color: #e5e7eb; border: 1px solid #1f2937; border-radius: 8px; padding: 8px 10px; }
+    .fever-badge { display: inline-block; background: #f97316; color: #0b1220; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 700; margin-left: 6px; }
+    .muted-ghost { opacity: 0.7; font-size: 13px; }
+    .pulse {
+      animation: pulse-scale 0.22s ease-out;
+    }
+    @keyframes pulse-scale {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+    .shake {
+      animation: shake 0.25s ease-in-out;
+    }
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-3px); }
+      50% { transform: translateX(3px); }
+      75% { transform: translateX(-2px); }
+      100% { transform: translateX(0); }
+    }
+    .top-row {
+      color: #fde68a;
+      font-weight: 700;
+    }
+    @media (max-width: 640px) { .emoji { font-size: 72px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Emoji Key Rush</h1>
+    <p class="subtitle" id="subtitle">Train your typing speed & combos with emojis – now also in KPM spam mode!</p>
+    <div class="top-controls">
+      <div class="mode-switch" aria-label="Game mode">
+        <button class="mode-btn active" data-mode="emoji" id="btn-mode-emoji">Emoji training</button>
+        <button class="mode-btn" data-mode="spam" id="btn-mode-spam">KPM spam</button>
+      </div>
+      <div class="difficulty-switch" aria-label="Difficulty">
+        <button class="difficulty-btn active" data-diff="chill" id="btn-diff-chill">Chill</button>
+        <button class="difficulty-btn" data-diff="rychlost" id="btn-diff-speed">Speed</button>
+        <button class="difficulty-btn" data-diff="brutal" id="btn-diff-brutal">Brutal</button>
+      </div>
+      <div class="controls">
+        <label id="label-duration">
+          <span id="label-duration-text">Duration</span>:
+          <select id="duration-select">
+            <option value="30">30 s</option>
+            <option value="60">60 s</option>
+            <option value="90">90 s</option>
+          </select>
+        </label>
+        <button id="start-btn" class="btn">Start</button>
+        <label class="small">
+          <input type="checkbox" id="sound-toggle" checked>
+          <span id="sound-label-text">Sound ON</span>
+        </label>
+      </div>
+      <div class="mode-switch" aria-label="Language">
+        <button class="mode-btn lang-btn active" data-lang="en" id="btn-lang-en">EN</button>
+        <button class="mode-btn lang-btn" data-lang="sk" id="btn-lang-sk">SK</button>
+      </div>
+    </div>
+  </header>
+  <main>
+    <div class="game-area">
+      <div class="panel emoji-display">
+        <div class="emoji" id="emoji">🎯</div>
+        <div class="key-target" id="key">Press the key matching the emoji</div>
+        <div class="log" id="log">Ready?</div>
+        <div class="progress-container" aria-label="Remaining time">
+          <div class="progress" id="time-progress"></div>
+        </div>
+        <div class="timer" id="timer">00:30</div>
+      </div>
+      <div class="panel">
+        <div class="stats">
+          <div class="stat-box">
+            <div class="stat-label" id="label-kpm">KPM</div>
+            <div class="stat-value" id="kpm">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label" id="label-hits">Hits</div>
+            <div class="stat-value" id="hits">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label" id="label-mistakes">Mistakes</div>
+            <div class="stat-value" id="mistakes">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label" id="label-combo">Combo</div>
+            <div class="stat-value" id="combo">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label" id="label-max-combo">Max combo</div>
+            <div class="stat-value" id="max-combo">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label" id="label-fever">Fever</div>
+            <div class="stat-value"><span id="fever-status" class="fever-indicator">OFF</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2 id="hall-title">Hall of Fame</h2>
+      <p class="muted-ghost" id="hall-desc">The best KPM results are saved on this device.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th id="th-name">Name</th>
+            <th>KPM</th>
+            <th id="th-mode">Mode</th>
+            <th id="th-duration">Duration</th>
+            <th id="th-date">Date</th>
+          </tr>
+        </thead>
+        <tbody id="hall-body"></tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h2 id="ach-title">Achievements</h2>
+      <div class="achievements" id="achievements"></div>
+    </div>
+  </main>
+
+  <script>
+    const EMOJI_KEYS = [
+      { emoji: '🐶', key: 'd', hint: { en: 'dog', sk: 'pes' } },
+      { emoji: '🐱', key: 'c', hint: { en: 'cat', sk: 'mačka' } },
+      { emoji: '🚗', key: 'a', hint: { en: 'car', sk: 'auto' } },
+      { emoji: '🚲', key: 'b', hint: { en: 'bike', sk: 'bicykel' } },
+      { emoji: '🍕', key: 'p', hint: { en: 'pizza', sk: 'pizza' } },
+      { emoji: '🍔', key: 'h', hint: { en: 'burger', sk: 'hamburger' } },
+      { emoji: '🌞', key: 's', hint: { en: 'sun', sk: 'slnko' } },
+      { emoji: '🌧️', key: 'r', hint: { en: 'rain', sk: 'dážď' } },
+      { emoji: '🎵', key: 'm', hint: { en: 'music', sk: 'hudba' } },
+      { emoji: '🎮', key: 'g', hint: { en: 'game', sk: 'hra' } },
+      { emoji: '📚', key: 'k', hint: { en: 'book', sk: 'kniha' } },
+      { emoji: '✈️', key: 'l', hint: { en: 'flight', sk: 'let' } },
+      { emoji: '⚽', key: 'f', hint: { en: 'football', sk: 'futbal' } },
+      { emoji: '🥕', key: 'v', hint: { en: 'veggies', sk: 'zelenina' } },
+      { emoji: '🍎', key: 'j', hint: { en: 'apple', sk: 'jabĺčko' } },
+      { emoji: '🎯', key: 't', hint: { en: 'target', sk: 'cieľ' } },
+      { emoji: '🎻', key: 'v', hint: { en: 'violin', sk: 'husle' } },
+      { emoji: '🧊', key: 'i', hint: { en: 'ice', sk: 'ľad' } },
+      { emoji: '🔥', key: 'h', hint: { en: 'hot', sk: 'horúco' } },
+      { emoji: '🌈', key: 'n', hint: { en: 'rainbow', sk: 'dúha' } }
+    ];
+
+    const difficulties = {
+      chill:   { label: { en: 'Chill',   sk: 'Chill' },      targetChangeMs: 2200 },
+      rychlost:{ label: { en: 'Speed',   sk: 'Rýchlosť' },   targetChangeMs: 1500 },
+      brutal:  { label: { en: 'Brutal',  sk: 'Brutál' },     targetChangeMs: 950 }
+    };
+
+    const emojiEl = document.getElementById('emoji');
+    const keyEl = document.getElementById('key');
+    const logEl = document.getElementById('log');
+    const hitsEl = document.getElementById('hits');
+    const mistakesEl = document.getElementById('mistakes');
+    const comboEl = document.getElementById('combo');
+    const maxComboEl = document.getElementById('max-combo');
+    const kpmEl = document.getElementById('kpm');
+    const feverEl = document.getElementById('fever-status');
+    const timerEl = document.getElementById('timer');
+    const timeProgress = document.getElementById('time-progress');
+    const hallBody = document.getElementById('hall-body');
+    const achievementsEl = document.getElementById('achievements');
+    const soundToggle = document.getElementById('sound-toggle');
+    const subtitleEl = document.getElementById('subtitle');
+    const labelDurationTextEl = document.getElementById('label-duration-text');
+    const soundLabelTextEl = document.getElementById('sound-label-text');
+    const btnModeEmoji = document.getElementById('btn-mode-emoji');
+    const btnModeSpam = document.getElementById('btn-mode-spam');
+    const btnDiffChill = document.getElementById('btn-diff-chill');
+    const btnDiffSpeed = document.getElementById('btn-diff-speed');
+    const btnDiffBrutal = document.getElementById('btn-diff-brutal');
+    const hallTitleEl = document.getElementById('hall-title');
+    const hallDescEl = document.getElementById('hall-desc');
+    const thNameEl = document.getElementById('th-name');
+    const thModeEl = document.getElementById('th-mode');
+    const thDurationEl = document.getElementById('th-duration');
+    const thDateEl = document.getElementById('th-date');
+    const achTitleEl = document.getElementById('ach-title');
+    const labelKpmEl = document.getElementById('label-kpm');
+    const labelHitsEl = document.getElementById('label-hits');
+    const labelMistakesEl = document.getElementById('label-mistakes');
+    const labelComboEl = document.getElementById('label-combo');
+    const labelMaxComboEl = document.getElementById('label-max-combo');
+    const labelFeverEl = document.getElementById('label-fever');
+
+    const i18n = {
+      en: {
+        subtitle: "Train your typing speed & combos with emojis – now also in KPM spam mode!",
+        labelDuration: "Duration",
+        soundLabel: "Sound ON",
+        modeEmoji: "Emoji training",
+        modeSpam: "KPM spam",
+        diffChill: "Chill",
+        diffSpeed: "Speed",
+        diffBrutal: "Brutal",
+        keyHintEmoji: "Press the key matching the emoji",
+        logReady: "Ready?",
+        logGameRunning: "Game in progress!",
+        logSpamModeReady: "Spam mode ready.",
+        logSpamHint: "Spam A–Z letters as fast as you can!",
+        logEmojiModeReady: "Emoji training ready!",
+        logTipPrefix: "Hint: ",
+        logComboBreak: "Combo broken!",
+        logCombo: "Combo {combo}!",
+        hallTitle: "Hall of Fame",
+        hallDesc: "The best KPM results are saved on this device.",
+        thName: "Name",
+        thMode: "Mode",
+        thDuration: "Duration",
+        thDate: "Date",
+        hallEmpty: "No records yet.",
+        achievementsTitle: "Achievements",
+        achFirstTitle: "First game",
+        achFirstDesc: "Finish one game.",
+        achKpm120Title: "KPM 120",
+        achKpm120Desc: "Reach 120 KPM.",
+        achKpm200Title: "KPM 200",
+        achKpm200Desc: "Reach 200 KPM.",
+        achComboTitle: "Combo 20",
+        achComboDesc: "Hold a combo of 20.",
+        achFeverTitle: "Fever!",
+        achFeverDesc: "Trigger FEVER at least once.",
+        achBrutalTitle: "Brutal beaten",
+        achBrutalDesc: "Finish a game on Brutal difficulty.",
+        achDoneBadge: "completed",
+        kpmEval1: "🙂 Nice warm-up!",
+        kpmEval2: "😎 Great speed!",
+        kpmEval3: "⚡ Almost a rocket!",
+        kpmEval4: "🔥🤯 Legendary finger ninja!",
+        promptName: "Enter your name for the Hall of Fame:",
+        promptNameDefault: "Player",
+        feverOff: "OFF",
+        feverOn: "FEVER",
+        labelKpm: "KPM",
+        labelHits: "Hits",
+        labelMistakes: "Mistakes",
+        labelCombo: "Combo",
+        labelMaxCombo: "Max combo",
+        labelFever: "Fever"
+      },
+      sk: {
+        subtitle: "Trénuj rýchlosť písania a kombá s emodži – teraz aj v móde KPM spam!",
+        labelDuration: "Trvanie",
+        soundLabel: "Zvuk ON",
+        modeEmoji: "Emoji tréning",
+        modeSpam: "KPM spam",
+        diffChill: "Chill",
+        diffSpeed: "Rýchlosť",
+        diffBrutal: "Brutál",
+        keyHintEmoji: "Stlač kláves podľa emodži",
+        logReady: "Pripravený?",
+        logGameRunning: "Hra beží!",
+        logSpamModeReady: "Spam mód pripravený.",
+        logSpamHint: "Spamuj písmená A–Z čo najrýchlejšie!",
+        logEmojiModeReady: "Emoji tréning pripravený!",
+        logTipPrefix: "Tip: ",
+        logComboBreak: "Kombo prerušené!",
+        logCombo: "Kombo {combo}!",
+        hallTitle: "Sieň slávy",
+        hallDesc: "Uložia sa najlepšie KPM výsledky na zariadení.",
+        thName: "Meno",
+        thMode: "Režim",
+        thDuration: "Trvanie",
+        thDate: "Dátum",
+        hallEmpty: "Zatiaľ žiadne záznamy.",
+        achievementsTitle: "Úspechy",
+        achFirstTitle: "Prvá hra",
+        achFirstDesc: "Dokonči jednu hru.",
+        achKpm120Title: "KPM 120",
+        achKpm120Desc: "Dosiahni 120 KPM.",
+        achKpm200Title: "KPM 200",
+        achKpm200Desc: "Dosiahni 200 KPM.",
+        achComboTitle: "Kombo 20",
+        achComboDesc: "Udrž kombo 20.",
+        achFeverTitle: "Fever!",
+        achFeverDesc: "Aktivuj FEVER aspoň raz.",
+        achBrutalTitle: "Brutál zdolaný",
+        achBrutalDesc: "Dokonči hru na Brutál.",
+        achDoneBadge: "splnené",
+        kpmEval1: "🙂 Dobrá rozcvička!",
+        kpmEval2: "😎 Super rýchlosť!",
+        kpmEval3: "⚡ Skoro raketa!",
+        kpmEval4: "🔥🤯 Legendárny ninja prstov!",
+        promptName: "Zadaj meno pre tabuľku slávy:",
+        promptNameDefault: "Hráč",
+        feverOff: "OFF",
+        feverOn: "FEVER",
+        labelKpm: "KPM",
+        labelHits: "Zásahy",
+        labelMistakes: "Chyby",
+        labelCombo: "Kombo",
+        labelMaxCombo: "Max kombo",
+        labelFever: "Fever"
+      }
+    };
+
+    let currentLang = 'en';
+
+    function t(key) {
+      return i18n[currentLang][key] || '';
+    }
+
+    let currentDifficulty = 'chill';
+    let gameMode = 'emoji';
+    let currentTarget = null;
+    let gameRunning = false;
+    let hits = 0;
+    let mistakes = 0;
+    let combo = 0;
+    let maxCombo = 0;
+    let feverActive = false;
+    let feverTriggeredThisGame = false;
+    let timerInterval = null;
+    let changeInterval = null;
+    let remaining = 30;
+    let startTimestamp = null;
+    let sessionBestKpm = 0;
+
+    // Audio
+    let audioCtx = null;
+    let soundEnabled = true;
+
+    function getAudioCtx() {
+      if (!soundEnabled) return null;
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return null;
+        audioCtx = new AudioContextClass();
+      }
+      return audioCtx;
+    }
+
+    function playTone(freq, duration = 0.12, volume = 0.12) {
+      if (!soundEnabled) return;
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.value = volume;
+      osc.connect(gain).connect(ctx.destination);
+      const now = ctx.currentTime;
+      osc.start(now);
+      osc.stop(now + duration);
+    }
+
+    const sounds = {
+      hit: () => playTone(520),
+      combo: () => playTone(700, 0.1, 0.14),
+      fever: () => playTone(900, 0.25, 0.2),
+      combo_break: () => playTone(200, 0.25, 0.18)
+    };
+
+    const achievements = [
+      {
+        id: 'first_game',
+        title: { en: 'First game', sk: 'Prvá hra' },
+        desc: { en: 'Finish one game.', sk: 'Dokonči jednu hru.' },
+        condition: (stats) => stats.finishedGames >= 1
+      },
+      {
+        id: 'kpm_120',
+        title: { en: 'KPM 120', sk: 'KPM 120' },
+        desc: { en: 'Reach 120 KPM.', sk: 'Dosiahni 120 KPM.' },
+        condition: (stats) => stats.lastKpm >= 120
+      },
+      {
+        id: 'kpm_200',
+        title: { en: 'KPM 200', sk: 'KPM 200' },
+        desc: { en: 'Reach 200 KPM.', sk: 'Dosiahni 200 KPM.' },
+        condition: (stats) => stats.lastKpm >= 200
+      },
+      {
+        id: 'combo_20',
+        title: { en: 'Combo 20', sk: 'Kombo 20' },
+        desc: { en: 'Hold a combo of 20.', sk: 'Udrž kombo 20.' },
+        condition: (stats) => stats.maxCombo >= 20
+      },
+      {
+        id: 'fever_once',
+        title: { en: 'Fever!', sk: 'Fever!' },
+        desc: { en: 'Trigger FEVER at least once.', sk: 'Aktivuj FEVER aspoň raz.' },
+        condition: (stats) => stats.fever
+      },
+      {
+        id: 'brutal_done',
+        title: { en: 'Brutal beaten', sk: 'Brutál zdolaný' },
+        desc: { en: 'Finish a game on Brutal difficulty.', sk: 'Dokonči hru na Brutál.' },
+        condition: (stats) => stats.difficulty === 'brutal'
+      }
+    ];
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60).toString().padStart(2, '0');
+      const s = Math.floor(sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function pulseElement(el) {
+      if (!el) return;
+      el.classList.remove('pulse');
+      void el.offsetWidth;
+      el.classList.add('pulse');
+    }
+
+    function shakeElement(el) {
+      if (!el) return;
+      el.classList.remove('shake');
+      void el.offsetWidth;
+      el.classList.add('shake');
+    }
+
+    function kpmEvaluation(kpm) {
+      if (kpm < 80) return t('kpmEval1');
+      if (kpm < 140) return t('kpmEval2');
+      if (kpm < 200) return t('kpmEval3');
+      return t('kpmEval4');
+    }
+
+    function resetState() {
+      hits = 0;
+      mistakes = 0;
+      combo = 0;
+      maxCombo = 0;
+      feverActive = false;
+      feverTriggeredThisGame = false;
+      sessionBestKpm = 0;
+      hitsEl.textContent = '0';
+      mistakesEl.textContent = '0';
+      comboEl.textContent = '0';
+      maxComboEl.textContent = '0';
+      kpmEl.textContent = '0';
+      feverEl.textContent = t('feverOff');
+      feverEl.classList.remove('fever-badge');
+      emojiEl.textContent = '🎯';
+      keyEl.textContent = t('keyHintEmoji');
+      logEl.textContent = t('logReady');
+      timeProgress.style.width = '100%';
+      document.body.classList.remove('fever');
+    }
+
+    function chooseTarget() {
+      currentTarget = EMOJI_KEYS[Math.floor(Math.random() * EMOJI_KEYS.length)];
+      emojiEl.textContent = currentTarget.emoji;
+      keyEl.textContent = `Press: ${currentTarget.key.toUpperCase()}`;
+      logEl.textContent = t('logTipPrefix') + currentTarget.hint[currentLang];
+    }
+
+    function startGame() {
+      if (gameRunning) return;
+      resetState();
+      gameRunning = true;
+      remaining = parseInt(document.getElementById('duration-select').value, 10);
+      startTimestamp = Date.now();
+      timerEl.textContent = formatTime(remaining);
+      logEl.textContent = t('logGameRunning');
+
+      if (gameMode === 'emoji') {
+        chooseTarget();
+        changeInterval = setInterval(chooseTarget, difficulties[currentDifficulty].targetChangeMs);
+      } else {
+        emojiEl.textContent = '⚡';
+        keyEl.textContent = t('logSpamHint');
+        logEl.textContent = t('logSpamHint');
+      }
+
+      timerInterval = setInterval(() => {
+        remaining -= 1;
+        if (remaining <= 0) {
+          timerEl.textContent = '00:00';
+          timeProgress.style.width = '0%';
+          endGame();
+          return;
+        }
+        timerEl.textContent = formatTime(remaining);
+        updateKpm();
+        timeProgress.style.width = `${(remaining / parseInt(document.getElementById('duration-select').value, 10)) * 100}%`;
+      }, 1000);
+    }
+
+    function endGame() {
+      if (!gameRunning) return;
+      gameRunning = false;
+      clearInterval(timerInterval);
+      clearInterval(changeInterval);
+      changeInterval = null;
+      timerInterval = null;
+      document.body.classList.remove('fever');
+      feverActive = false;
+      feverEl.textContent = t('feverOff');
+      feverEl.classList.remove('fever-badge');
+      const elapsedMinutes = (Date.now() - startTimestamp) / 60000;
+      const finalKpm = Math.round(elapsedMinutes > 0 ? hits / elapsedMinutes : 0);
+      kpmEl.textContent = finalKpm;
+      const evalText = kpmEvaluation(finalKpm);
+      logEl.textContent = `Hotovo! / Done! → ${finalKpm} KPM, max combo ${maxCombo}. ${evalText}`;
+      const globalStats = loadGlobalStats();
+      globalStats.games = (globalStats.games || 0) + 1;
+      saveGlobalStats(globalStats);
+      updateAchievementsAfterGame(finalKpm, maxCombo, currentDifficulty, globalStats.games);
+      tryRegisterHighScore(finalKpm);
+    }
+
+    function updateKpm() {
+      if (!startTimestamp) return;
+      const elapsedMinutes = (Date.now() - startTimestamp) / 60000;
+      const current = Math.round(elapsedMinutes > 0 ? hits / elapsedMinutes : 0);
+      kpmEl.textContent = current;
+      if (current > sessionBestKpm) {
+        sessionBestKpm = current;
+        pulseElement(kpmEl);
+      }
+    }
+
+    function updateComboUI() {
+      comboEl.textContent = combo;
+      maxComboEl.textContent = maxCombo;
+      if (combo > 0) {
+        pulseElement(comboEl);
+        if (combo === maxCombo) {
+          pulseElement(maxComboEl);
+        }
+      }
+      if (combo > 0 && combo % 10 === 0) {
+        const msg = t('logCombo').replace('{combo}', combo);
+        logEl.textContent = msg;
+        sounds.combo();
+      }
+    }
+
+    function checkFever() {
+      if (combo >= 10 && !feverActive) {
+        feverActive = true;
+        feverTriggeredThisGame = true;
+        feverEl.textContent = t('feverOn');
+        feverEl.classList.add('fever-badge');
+        document.body.classList.add('fever');
+        sounds.fever();
+      } else if (combo < 10 && feverActive) {
+        feverActive = false;
+        feverEl.textContent = t('feverOff');
+        feverEl.classList.remove('fever-badge');
+        document.body.classList.remove('fever');
+      }
+    }
+
+    function comboBreak() {
+      if (combo > 0) {
+        logEl.textContent = t('logComboBreak');
+        sounds.combo_break();
+        shakeElement(emojiEl);
+        shakeElement(logEl);
+      }
+      combo = 0;
+      comboEl.textContent = '0';
+      checkFever();
+    }
+
+    function handleKey(e) {
+      if (!gameRunning) return;
+      const key = e.key.toLowerCase();
+
+      if (gameMode === 'emoji') {
+        if ([' ', 'enter'].includes(key)) {
+          const hint = currentTarget ? currentTarget.hint[currentLang] : '';
+          logEl.textContent = t('logTipPrefix') + hint;
+          return;
+        }
+        if (!/^[a-z]$/.test(key)) return;
+        if (currentTarget && key === currentTarget.key) {
+          hits++;
+          hitsEl.textContent = hits;
+          combo++;
+          maxCombo = Math.max(maxCombo, combo);
+          updateComboUI();
+          updateKpm();
+          checkFever();
+          sounds.hit();
+          chooseTarget();
+        } else {
+          mistakes++;
+          mistakesEl.textContent = mistakes;
+          comboBreak();
+        }
+      } else {
+        if ([' ', 'enter'].includes(key)) {
+          logEl.textContent = t('logSpamHint');
+          return;
+        }
+        if (/^[a-z]$/.test(key)) {
+          hits++;
+          hitsEl.textContent = hits;
+          combo++;
+          maxCombo = Math.max(maxCombo, combo);
+          updateComboUI();
+          updateKpm();
+          checkFever();
+          sounds.hit();
+        } else {
+          mistakes++;
+          mistakesEl.textContent = mistakes;
+          comboBreak();
+        }
+      }
+    }
+
+    function tryRegisterHighScore(finalKpm) {
+      if (finalKpm <= 0) return;
+      const name = prompt(t('promptName'), t('promptNameDefault'));
+      if (!name) return;
+      const stored = JSON.parse(localStorage.getItem('emoji_key_rush_hof') || '[]');
+      const gameModeLabel = gameMode === 'emoji'
+        ? (currentLang === 'sk' ? 'Emoji' : 'Emoji')
+        : (currentLang === 'sk' ? 'KPM' : 'KPM');
+      const difficultyLabel = difficulties[currentDifficulty].label[currentLang];
+      const modeText = `${gameModeLabel} / ${difficultyLabel}`;
+      stored.push({
+        name,
+        kpm: finalKpm,
+        mode: modeText,
+        duration: `${parseInt(document.getElementById('duration-select').value, 10)}s`,
+        date: new Date().toLocaleDateString()
+      });
+      stored.sort((a, b) => b.kpm - a.kpm);
+      localStorage.setItem('emoji_key_rush_hof', JSON.stringify(stored.slice(0, 20)));
+      renderHall();
+    }
+
+    function renderHall() {
+      const stored = JSON.parse(localStorage.getItem('emoji_key_rush_hof') || '[]');
+      if (!stored.length) {
+        hallBody.innerHTML = `<tr><td colspan="6" class="muted-ghost">${t('hallEmpty')}</td></tr>`;
+        return;
+      }
+      hallBody.innerHTML = stored.map((entry, idx) => {
+        const rowClass = idx === 0 ? ' class="top-row"' : '';
+        return `<tr${rowClass}><td>${idx + 1}</td><td>${entry.name}</td><td>${entry.kpm}</td><td>${entry.mode}</td><td>${entry.duration}</td><td>${entry.date}</td></tr>`;
+      }).join('');
+    }
+
+    function loadAchievementsState() {
+      return JSON.parse(localStorage.getItem('emoji_key_rush_achievements') || '{}');
+    }
+
+    function saveAchievementsState(state) {
+      localStorage.setItem('emoji_key_rush_achievements', JSON.stringify(state));
+    }
+
+    function renderAchievements() {
+      const unlocked = loadAchievementsState();
+      achievementsEl.innerHTML = achievements.map(a => {
+        const isUnlocked = unlocked[a.id];
+        const title = a.title[currentLang];
+        const desc = a.desc[currentLang];
+        const badge = isUnlocked ? `<div class="fever-badge">${t('achDoneBadge')}</div>` : '';
+        return `<div class="achievement ${isUnlocked ? 'unlocked' : ''}"><h4>${title}</h4><div class="small">${desc}</div>${badge}</div>`;
+      }).join('');
+    }
+
+    function loadGlobalStats() {
+      return JSON.parse(localStorage.getItem('emoji_key_rush_stats') || '{"games":0}');
+    }
+
+    function saveGlobalStats(stats) {
+      localStorage.setItem('emoji_key_rush_stats', JSON.stringify(stats));
+    }
+
+    function updateAchievementsAfterGame(finalKpm, maxComboValue, difficultyId, gamesPlayed) {
+      const state = loadAchievementsState();
+      const stats = {
+        finishedGames: gamesPlayed,
+        lastKpm: finalKpm,
+        maxCombo: maxComboValue,
+        fever: feverTriggeredThisGame,
+        difficulty: difficultyId
+      };
+      achievements.forEach(a => { if (a.condition(stats)) state[a.id] = true; });
+      saveAchievementsState(state);
+      renderAchievements();
+    }
+
+    function setMode(mode) {
+      if (gameRunning) return;
+      gameMode = mode;
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        if (!btn.dataset.mode) return;
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+      });
+      if (mode === 'emoji') {
+        emojiEl.textContent = '🎯';
+        keyEl.textContent = t('keyHintEmoji');
+        logEl.textContent = t('logEmojiModeReady');
+      } else {
+        emojiEl.textContent = '⚡';
+        keyEl.textContent = t('logSpamHint');
+        logEl.textContent = t('logSpamModeReady');
+      }
+    }
+
+    function setDifficulty(diff) {
+      if (gameRunning) return;
+      currentDifficulty = diff;
+      document.querySelectorAll('.difficulty-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.diff === diff);
+      });
+    }
+
+    function applyLanguage() {
+      subtitleEl.textContent = t('subtitle');
+      labelDurationTextEl.textContent = t('labelDuration');
+      soundLabelTextEl.textContent = t('soundLabel');
+
+      btnModeEmoji.textContent = t('modeEmoji');
+      btnModeSpam.textContent = t('modeSpam');
+
+      btnDiffChill.textContent = t('diffChill');
+      btnDiffSpeed.textContent = t('diffSpeed');
+      btnDiffBrutal.textContent = t('diffBrutal');
+
+      hallTitleEl.textContent = t('hallTitle');
+      hallDescEl.textContent = t('hallDesc');
+      thNameEl.textContent = t('thName');
+      thModeEl.textContent = t('thMode');
+      thDurationEl.textContent = t('thDuration');
+      thDateEl.textContent = t('thDate');
+
+      achTitleEl.textContent = t('achievementsTitle');
+
+      labelKpmEl.textContent = t('labelKpm');
+      labelHitsEl.textContent = t('labelHits');
+      labelMistakesEl.textContent = t('labelMistakes');
+      labelComboEl.textContent = t('labelCombo');
+      labelMaxComboEl.textContent = t('labelMaxCombo');
+      labelFeverEl.textContent = t('labelFever');
+
+      // Update fever label only if not in active fever
+      if (!feverActive) {
+        feverEl.textContent = t('feverOff');
+      } else {
+        feverEl.textContent = t('feverOn');
+      }
+
+      if (!gameRunning) {
+        if (gameMode === 'emoji') {
+          keyEl.textContent = t('keyHintEmoji');
+          logEl.textContent = t('logEmojiModeReady');
+        } else {
+          keyEl.textContent = t('logSpamHint');
+          logEl.textContent = t('logSpamModeReady');
+        }
+      }
+
+      renderAchievements();
+      renderHall();
+    }
+
+    function setLanguage(lang) {
+      if (!i18n[lang]) return;
+      currentLang = lang;
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lang === lang);
+      });
+      applyLanguage();
+    }
+
+    // Event listeners
+    document.addEventListener('keydown', handleKey);
+    document.getElementById('start-btn').addEventListener('click', startGame);
+    document.querySelectorAll('.difficulty-btn').forEach(btn => btn.addEventListener('click', () => setDifficulty(btn.dataset.diff)));
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      if (btn.classList.contains('lang-btn')) return;
+      btn.addEventListener('click', () => setMode(btn.dataset.mode));
+    });
+    document.querySelectorAll('.lang-btn').forEach(btn => btn.addEventListener('click', () => setLanguage(btn.dataset.lang)));
+    if (soundToggle) {
+      soundToggle.addEventListener('change', () => {
+        soundEnabled = soundToggle.checked;
+      });
+    }
+
+    // Init
+    renderHall();
+    renderAchievements();
+    timerEl.textContent = formatTime(parseInt(document.getElementById('duration-select').value, 10));
+    setLanguage('en');
+  </script>
+</body>
+</html>
